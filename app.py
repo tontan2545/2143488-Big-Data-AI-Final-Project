@@ -36,6 +36,14 @@ def channel():
     write_dict_csv("./data/videos.csv", videos)
     return f"Successfully processed {len(channels)} channels and {len(videos)} videos"
 
+@app.route("/trending", methods=['GET'])
+def trending():
+    parts = "%2C".join(["id","statistics","snippet"])
+    response = requests.get(f"{YOUTUBE_API_URL}/videos?part={parts}&chart=mostPopular&regionCode=TH&maxResults=100&key={GOOGLE_API_KEY}")
+    data = response.json()
+    print(len(data))
+    return jsonify(data)
+
 def write_dict_csv(path, data):
     with open(path, "a") as f:
         dict_writer = csv.DictWriter(f, fieldnames=data[0].keys())
