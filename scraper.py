@@ -1,4 +1,4 @@
-import requests, sys, time, os, argparse
+import requests, time, os, gspread, schedule, json
 from dotenv import load_dotenv
 
 # List of simple to collect features
@@ -21,10 +21,31 @@ load_dotenv()
 YOUTUBE_API_URL = os.getenv("YOUTUBE_API_URL")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-def setup(code_path):
-    with open(code_path) as file:
-        country_codes = [x.rstrip() for x in file]
-    return country_codes
+country_codes = ["TH"]
+
+def create_service_account():
+    # make file name service_account.json in .config/gspread
+    service_account = {
+        "type": os.getenv("SERVICE_ACCOUNT_TYPE"),
+        "project_id": os.getenv("SERVICE_ACCOUNT_PROJECT_ID"),
+        "private_key_id": os.getenv("SERVICE_ACCOUNT_PRIVATE_KEY_ID"),
+        "private_key": os.getenv("SERVICE_ACCOUNT_PRIVATE_KEY").replace("\\n", "\n"),
+        "client_email": os.getenv("SERVICE_ACCOUNT_CLIENT_EMAIL"),
+        "client_id": os.getenv("SERVICE_ACCOUNT_CLIENT_ID"),
+        "auth_uri": os.getenv("SERVICE_ACCOUNT_AUTH_URI"),
+        "token_uri": os.getenv("SERVICE_ACCOUNT_TOKEN_URI"),
+        "auth_provider_x509_cert_url": os.getenv("SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL"),
+        "client_x509_cert_url": os.getenv("SERVICE_ACCOUNT_CLIENT_X509_CERT_URL")
+    }
+
+    if(not os.path.exists(".config")):
+        os.mkdir(".config")
+    if(not os.path.exists(".config/gspread")):
+        os.mkdir(".config/gspread")
+
+    # write service account to .config/gspread
+    with open(".config/gspread/service_account.json", "w") as f:
+        f.write(json.dumps(service_account, indent=4))
 
 
 def prepare_feature(feature):
@@ -105,6 +126,7 @@ def get_videos(items):
 def get_pages(country_code, next_page_token="&"):
     country_data = []
 
+    print(f"Fetching trending {country_code} data for {time.strftime('%Y-%m-%d')}")
     # Because the API uses page tokens (which are literally just the same function of numbers everywhere) it is much
     # more inconvenient to iterate over pages, but that is what is done here.
     while next_page_token is not None:
@@ -119,36 +141,34 @@ def get_pages(country_code, next_page_token="&"):
         # Get all of the items as a list and let get_videos return the needed features
         items = video_data_page.get('items', [])
         country_data += get_videos(items)
-
     return country_data
 
 
-def write_to_file(country_code, country_data):
+def write_to_gg_sheet(country_code, country_data):
 
-    print(f"Writing {country_code} data to file...")
+    print(f"{len(country_data)} videos found")
+    print(f"Writing {country_code} data to google sheet...")
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    gc = gspread.service_account(".config/gspread/service_account.json")
+    sh = gc.open("Big Data Final Project (Youtube)").sheet1
+    sh.append_rows([[data[1:-1] for data in datas.split(',')] for datas in country_data[1:5]])
 
-    with open(f"{output_dir}/{time.strftime('%y.%d.%m')}_{country_code}_videos.csv", "w+", encoding='utf-8') as file:
-        for row in country_data:
-            file.write(f"{row}\n")
-
+def next_available_row(worksheet):
+    str_list = list(filter(None, worksheet.col_values(1)))
+    return str(len(str_list) + 1)
 
 def get_data():
+    print("============================================================")
     for country_code in country_codes:
         country_data = [",".join(header)] + get_pages(country_code)
-        write_to_file(country_code, country_data)
+        write_to_gg_sheet(country_code, country_data)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--country_code_path', help='Path to the file containing the list of country codes to scrape, by default will use country_codes.txt in the same directory', default='country_codes.txt')
-    parser.add_argument('--output_dir', help='Path to save the outputted files in', default='../data/')
-
-    args = parser.parse_args()
-
-    output_dir = args.output_dir
-    country_codes = setup(args.country_code_path)
-
-    get_data()
+    create_service_account()
+    schedule.every(10).seconds.do(get_data)
+    print("Starting schedule")
+    while True:
+        print("hello")
+        schedule.run_pending()
+        time.sleep(1)

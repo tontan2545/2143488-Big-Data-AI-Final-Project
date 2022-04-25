@@ -1,6 +1,10 @@
+# metadata
 __pycache__
+.ipynb_checkpoints
 
 data
 
+# secrets 
 .env
-.ipynb_checkpoints
+.config
+
