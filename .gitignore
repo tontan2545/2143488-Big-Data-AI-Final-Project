@@ -8,3 +8,6 @@ data
 .env
 .config
 
+# powerpoint
+*.pptx   
+
