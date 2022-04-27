@@ -38,6 +38,7 @@ def create_service_account():
         "client_x509_cert_url": os.getenv("SERVICE_ACCOUNT_CLIENT_X509_CERT_URL")
     }
 
+    print(service_account)
     if(not os.path.exists(".config")):
         os.mkdir(".config")
     if(not os.path.exists(".config/gspread")):
@@ -151,7 +152,9 @@ def write_to_gg_sheet(country_code, country_data):
 
     gc = gspread.service_account(".config/gspread/service_account.json")
     sh = gc.open("Big Data Final Project (Youtube)").sheet1
-    sh.append_rows([[data[1:-1] for data in datas.split(',')] for datas in country_data[1:5]])
+    to_append = [[data.replace("\"","") for data in datas.split('","')] for datas in country_data[1:2]]
+    print(to_append)
+    sh.append_rows(to_append)
 
 def next_available_row(worksheet):
     str_list = list(filter(None, worksheet.col_values(1)))
@@ -162,13 +165,13 @@ def get_data():
     for country_code in country_codes:
         country_data = [",".join(header)] + get_pages(country_code)
         write_to_gg_sheet(country_code, country_data)
+    print("============================================================")
 
 
 if __name__ == "__main__":
     create_service_account()
-    schedule.every(10).seconds.do(get_data)
+    schedule.every().day.at("18:00").do(get_data)
     print("Starting schedule")
     while True:
-        print("hello")
         schedule.run_pending()
         time.sleep(1)
