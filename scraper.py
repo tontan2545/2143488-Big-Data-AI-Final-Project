@@ -147,14 +147,15 @@ def get_pages(country_code, next_page_token="&"):
 
 def write_to_gg_sheet(country_code, country_data):
 
-    print(f"{len(country_data)} videos found")
+    print(f"{len(country_data) - 1} videos found")
     print(f"Writing {country_code} data to google sheet...")
 
     gc = gspread.service_account(".config/gspread/service_account.json")
     sh = gc.open("Big Data Final Project (Youtube)").sheet1
-    to_append = [[data.replace("\"","") for data in datas.split('","')] for datas in country_data[1:2]]
-    print(to_append)
+    to_append = [[data.replace("\"","") for data in datas.split('","')] for datas in country_data[1:]]
     sh.append_rows(to_append)
+
+    print("Write success!")
 
 def next_available_row(worksheet):
     str_list = list(filter(None, worksheet.col_values(1)))
@@ -174,4 +175,4 @@ if __name__ == "__main__":
     print("Starting schedule")
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        time.sleep(60)
