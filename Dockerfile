@@ -1,4 +1,5 @@
-FROM python:latest
+FROM ghcr.io/siwatinc/python-baseimage:python3
+
 LABEL Maintainer="tontan2203"
 
 WORKDIR /usr/app/src
