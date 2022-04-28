@@ -1,3 +1,3 @@
 export $(xargs < /config/environment.sh)
-python scraper.py
+python3 scraper.py
 tail -f /dev/null
