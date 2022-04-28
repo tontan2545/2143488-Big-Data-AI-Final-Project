@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY scraper.py .
 
-CMD ["python", "scraper.py"]
+CMD source /config/.env && python scraper.py
