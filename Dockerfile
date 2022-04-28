@@ -10,4 +10,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY scraper.py .
 
-CMD export $(xargs < /config/environment.sh) && python scraper.py && tail -f /dev/null
+ADD ./entrypoint.sh /entrypoint.sh
+
+CMD bash /entrypoint.sh
