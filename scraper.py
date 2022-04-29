@@ -171,7 +171,7 @@ def get_data():
 
 if __name__ == "__main__":
     create_service_account()
-    schedule.every().hour.at(":00").do(get_data)
+    schedule.every().day.at("18:00").do(get_data)
     print("Starting schedule")
     while True:
         schedule.run_pending()
